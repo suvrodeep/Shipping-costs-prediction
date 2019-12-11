@@ -2,25 +2,20 @@ import pandas as pd
 import numpy as np
 import math as mt
 import datetime
-import swifter
 
 
 def preprocess(data):
     data['is_adr'] = data['is_adr'].astype('int')
     data['is_adr'] = data['is_adr'].astype('category')
 
-    data['distance'] = data.swifter.apply(lambda row: mt.sqrt(mt.pow(row['destination_longitude'] -
-                                                                     row['origin_longitude'], 2) +
-                                                              mt.pow(row['destination_latitude'] -
-                                                                     row['origin_latitude'], 2)), axis=1)
+    data['distance'] = np.sqrt(np.power(data['destination_longitude'] - data['origin_longitude'], 2) +
+                               np.power(data['destination_latitude'] - data['origin_latitude'], 2))
 
-    data['shipping_date'] = data.swifter.apply(lambda row: datetime.datetime.strptime(row['shipping_date'],
-                                                                                      "%Y-%m-%d"), axis=1)
-    data['shipping_date_month'] = data.swifter.apply(lambda row: row['shipping_date'].month, axis=1)
-    data['shipping_date_month'] = data['shipping_date_month'].astype('int')
+    data['shipping_date'] = pd.to_datetime(data['shipping_date'])
+    data['shipping_date_month'] = pd.DatetimeIndex(data['shipping_date']).month
+    data['shipping_date_day'] = pd.DatetimeIndex(data['shipping_date']).day
+
     data['shipping_date_month'] = data['shipping_date_month'].astype('category')
-    data['shipping_date_day'] = data.swifter.apply(lambda row: row['shipping_date'].day, axis=1)
-    data['shipping_date_day'] = data['shipping_date_day'].astype('int')
     data['shipping_date_day'] = data['shipping_date_day'].astype('category')
 
     return data
