@@ -42,7 +42,7 @@ def grid_search(data):
 
     # Preparing data for XGBoost
     features = list(set(list(data.columns.values)).difference(["cost"]))
-    dtrain = xgb.DMatrix(data=pd.DataFrame(data.loc[:, features]), label=np.log(data['cost'] * 100))
+    dtrain = xgb.DMatrix(data=pd.DataFrame(data.loc[:, features]), label=pd.DataFrame(np.log(data['cost'] * 100)))
 
     for eta in eta_range:
         for max_depth in max_depth_range:
@@ -51,7 +51,7 @@ def grid_search(data):
                      'max_depth': max_depth,
                      'eval_metric': eval_metric,
                      'seed': 3137}
-            eval_result = xgb.cv(params=param, dtrain=dtrain, num_boost_round=1000, early_stopping_rounds=15,
+            eval_result = xgb.cv(params=param, dtrain=dtrain, num_boost_round=200, early_stopping_rounds=15,
                                  nfold=5, verbose_eval=True)
             print("eta: {}  max_depth: {}   RMSE:{}".format(eta, max_depth,
                                                             round(eval_result['test-rmse-mean'].min(), 7)))
