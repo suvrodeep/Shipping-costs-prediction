@@ -34,13 +34,13 @@ def preprocess(data):
 
 def grid_search(data):
     # Initializing model params
-    eta_range = np.arange(0.2, 0.55, 0.05)
+    eta_range = np.arange(0.2, 0.45, 0.05)
     max_depth_range = [5, 6, 7, 8]
     model_obj = 'reg:squarederror'
     eval_metric = 'rmse'
     df_perf = pd.DataFrame(columns=['eta', 'max_depth', 'rmse', 'num_rounds'])
 
-    # Preparing data for XGBoost
+    # Preparing data for XGBoost model
     features = list(set(list(data.columns.values)).difference(["cost"]))
     dtrain = xgb.DMatrix(data=pd.DataFrame(data.loc[:, features]), label=pd.DataFrame(np.log(data['cost'] * 100)))
 
@@ -64,10 +64,29 @@ def grid_search(data):
     num_rounds = int(df_perf.num_rounds[df_perf['rmse'] == df_perf['rmse'].min()].min())
     best_params = {'eta': best_eta,
                    'max_depth': best_max_depth,
-                   'num_rounds': num_rounds}
+                   'objective': model_obj,
+                   'eval_metric': eval_metric,
+                   'seed': 3137}
     print("Optimum params:\n {}".format(best_params))
 
     return best_params
+
+
+def xgb_model(params, data):
+    # Preparing data
+    features = list(set(list(data.columns.values)).difference(["cost"]))
+    dtrain = xgb.DMatrix(data=pd.DataFrame(data.loc[:, features]), label=pd.DataFrame(np.log(data['cost'] * 100)))
+
+    watchlist = [(dtrain, 'train')]
+    model = xgb.train(params=params, dtrain=dtrain, num_boost_round=200, evals=watchlist, early_stopping_rounds=15)
+    return model
+
+
+def xgb_predict(model, data):
+    dtest = xgb.DMatrix(data=data)
+    predictions = np.exp(model.predict(dtest)) / 100
+
+    return predictions
 
 
 if __name__ == '__main__':
@@ -76,3 +95,12 @@ if __name__ == '__main__':
     print(df_train.dtypes)
 
     opt_params = grid_search(df_train.copy(deep=True))
+    best_model = xgb_model(opt_params, df_train)
+
+    test_data = pd.read_csv(filepath_or_buffer="test_data.csv", delimiter=";")
+    df_test = preprocess(test_data.copy(deep=True))
+    print(df_test.dtypes)
+    predicted_costs = xgb_predict(best_model, df_test)
+
+
+
