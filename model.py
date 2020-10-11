@@ -102,5 +102,7 @@ if __name__ == '__main__':
     print(df_test.dtypes)
     predicted_costs = xgb_predict(best_model, df_test)
 
+    ## print(metrics.r2_score(df_test['cost'], predicted_costs))
+
 
 
